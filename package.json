@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "yp-link.helloWorld",
-        "title": "Hello World"
+        "command": "extention.ypLink",
+        "title": "YP-LINK: Show Branch And FeishuId"
       }
     ]
   },
