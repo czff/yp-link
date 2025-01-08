@@ -10,7 +10,8 @@
 3. 打开飞书项目文档
 
 ## Requirements
-run `YP-LINK: Show Branch And FeishuId` command
+1. 安装拓展插件。目前用vsix，未发布到插件市场
+2. run `YP-LINK: Show Branch And FeishuId` command
 
 ## Known Issues
 
