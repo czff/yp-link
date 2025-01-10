@@ -14,6 +14,9 @@
     "Other"
   ],
   "activationEvents": [],
+  "extensionDependencies": [
+    "vscode.git"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
