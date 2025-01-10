@@ -6,6 +6,7 @@
   "engines": {
     "vscode": "^1.96.0"
   },
+  "author": "czf",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/czff/yp-link.git"
