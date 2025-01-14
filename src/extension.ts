@@ -6,7 +6,7 @@ interface IMessage {
   text?: string;
 }
 const extractFeishuId = (branchName: string) => {
-  const reg = /.*[-|\/](?<id>\d+)/gm;
+  const reg = /.*?[-|\/](?<id>\d+)/gm;
   let match = reg.exec(branchName);
   const id = match?.groups?.id ?? "";
   //   while ((match = reg.exec(branchName))) {
