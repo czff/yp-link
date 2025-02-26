@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { exec } from "node:child_process";
 
 interface IMessage {
   command: "showMessage" | "showErrorMessage" | "openBrowser";
@@ -16,60 +17,79 @@ const extractFeishuId = (branchName: string) => {
   return id;
 };
 
-export function activate(context: vscode.ExtensionContext) {
-  const disposable = vscode.commands.registerCommand("extention.ypLink", () => {
-    function getBranchName() {
-      const gitExtension = vscode.extensions.getExtension("vscode.git");
+function getBranchName(workspaceRoot: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // 获取当前工作区根目录
+    // const workspaceRoot = vscode.workspace.rootPath;
+    if (!workspaceRoot) {
+      reject(new Error("No workspace opened."));
+      return;
+    }
+    exec(
+      "git rev-parse --abbrev-ref HEAD",
+      { cwd: workspaceRoot },
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(`Failed to get branch name: ${stderr}`));
+          return;
+        }
+        // 去除换行符
+        resolve(stdout.trim());
+      }
+    );
+  });
+}
 
-      if (!gitExtension) {
-        vscode.window.showErrorMessage("Git extention not found");
+export function activate(context: vscode.ExtensionContext) {
+  const disposable = vscode.commands.registerCommand(
+    "extention.ypLink",
+    async () => {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || workspaceFolders.length === 0) {
+        vscode.window.showErrorMessage("No workspace folder opened.");
         return;
       }
 
-      const gitApi = gitExtension.exports.getAPI(1);
-      const repo = gitApi.repositories[0];
-
-      const branchName = repo.state.HEAD?.name ?? "";
-
-      return branchName;
-    }
-
-    const branchName = getBranchName();
-    if (!branchName) {
-      return;
-    }
-
-    const feishuId = extractFeishuId(branchName);
-
-    const webviewPannel = vscode.window.createWebviewPanel(
-      "branchAndFeishuidView",
-      "Show Branch And FeishuId",
-      vscode.ViewColumn.One,
-      {
-        enableScripts: true,
+      // todo 临时取第一个
+      // 存在多个 到时候一一展示
+      const branchName = await getBranchName(workspaceFolders[0].uri.fsPath);
+      if (!branchName) {
+        vscode.window.showErrorMessage("The branch name was not obtained");
+        return;
       }
-    );
 
-    webviewPannel.webview.html = getWebviewContent(branchName, feishuId);
+      const feishuId = extractFeishuId(branchName);
 
-    webviewPannel.webview.onDidReceiveMessage((message: IMessage) => {
-      switch (message.command) {
-        case "showMessage":
-          vscode.window.showInformationMessage(message.text ?? "");
-          break;
-        case "showErrorMessage":
-          vscode.window.showErrorMessage(message.text ?? "");
-          break;
-        case "openBrowser":
-          if (!message.url) return;
-          const url = vscode.Uri.parse(message.url);
-          vscode.env.openExternal(url);
-          break;
-        default:
-          break;
-      }
-    });
-  });
+      const webviewPannel = vscode.window.createWebviewPanel(
+        "branchAndFeishuidView",
+        "Show Branch And FeishuId",
+        vscode.ViewColumn.One,
+        {
+          enableScripts: true,
+        }
+      );
+
+      webviewPannel.webview.html = getWebviewContent(branchName, feishuId);
+
+      webviewPannel.webview.onDidReceiveMessage((message: IMessage) => {
+        switch (message.command) {
+          case "showMessage":
+            vscode.window.showInformationMessage(message.text ?? "");
+            break;
+          case "showErrorMessage":
+            vscode.window.showErrorMessage(message.text ?? "");
+            break;
+          case "openBrowser":
+            if (!message.url) return;
+            const url = vscode.Uri.parse(message.url);
+            vscode.env.openExternal(url);
+            break;
+          default:
+            break;
+        }
+      });
+    }
+  );
 
   context.subscriptions.push(disposable);
 }
